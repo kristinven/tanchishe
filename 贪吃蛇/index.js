@@ -8,15 +8,16 @@ var content = document.getElementsByClassName('content')[0];
 var oLoser = document.getElementsByClassName('loser')[0];
 var oClose = document.getElementsByClassName('close')[0];
 var startBtn = document.getElementsByClassName('startBtn')[0];
-var startPBtn = document.getElementsByClassName('start-pause')[0];
+var startPause = document.getElementsByClassName('start-pause')[0];
 var startPage = document.getElementsByClassName('startPage')[0];
-var startPauseBtn = document.getElementsByClassName('start-pause')[0];
-var oLeftPart = document.getElementsByClassName('left-part')[0];
-var oScore = document.getElementById('score');
-var oFinalScore = document.getElementById('final-score');
+var leftPart = document.getElementsByClassName('left-part')[0];
+var scoreBox = document.getElementById('score');
+var finalScore = document.getElementById('final-score');
 
+var startPauseBool = true;
+var startGameBool = true;
 var speed = 200;
-var timer = null;
+var snackMove = null;
 
 init();
 function init() {
@@ -24,52 +25,69 @@ function init() {
     this.mapW = parseInt(map.offsetWidth);
     this.mapH = parseInt(map.offsetHeight);
     this.map = content;
+
     // 蛇信息
     this.snackBody = [[2,0,'head'], [1,0,'body'], [0,0,'body']];
+    this.snackWidth = 20;
+    this.snackHeight = 20;
 
     // 食物信息
     this.foodWidth = 20;
     this.foodHeight = 20;
-    this.foodPositionX = 0;
-    this.foodPositionY = 0;
+    this.foodX = 0;
+    this.foodY = 0;
     
     // 游戏信息
-    this.score = 0;
-    this.direction = 'right';
+    this.direct = 'right';
     this.toRight = true;
     this.toLeft = false;
     this.toDown = true;
     this.toUp = true;
-    this.startFlag = true;
-    this.overFlag = false;
-    // food();
-    // snack();
+    
+    //分数
+    this.score = 0;
+    scoreBox.innerText = this.score;
     bindEvent();
 }
 function food() {
+    var mapLenW = this.mapW / this.foodWidth,
+        mapLenH = this.mapH / this.foodHeight;
     var food = document.createElement('div');
+    var test = true;
     food.setAttribute('class', 'food');
-    foodPositionX = Math.floor(Math.random() * (mapW / foodWidth));  
-    foodPositionY = Math.floor(Math.random() * (mapH / foodHeight));
-    food.style.left = foodPositionX * foodWidth + 'px';
-    food.style.top = foodPositionY * foodHeight + 'px';
+    this.foodX = Math.floor(Math.random() * mapLenW);  
+    this.foodY = Math.floor(Math.random() * mapLenH);
+    // 排除食物放在蛇身上
+    while(test) {
+        test = false;
+        for(var i = this.snackBody.length - 1; i >= 0; i--) {
+            if(this.foodX == this.snackBody[i][0] || this.foodY == this.snackBody[i][1]) {
+                this.foodX = Math.floor(Math.random() * mapLenW);  
+                this.foodY = Math.floor(Math.random() * mapLenH);
+                test = true;
+                break;
+            }
+        }
+    }
+
+    food.style.left = this.foodX * this.foodWidth + 'px';
+    food.style.top = this.foodY * this.foodHeight + 'px';
     
-    map.appendChild(food);
+    this.map.appendChild(food);
 }
 function snack() {
     for(var i = 0; i < snackBody.length; i++) {
         var snack = document.createElement('div');
-        snack.style.left = snackBody[i][0] * 20 + 'px';
-        snack.style.top = snackBody[i][1] * 20 + 'px';
+        snack.style.left = this.snackBody[i][0] * 20 + 'px';
+        snack.style.top = this.snackBody[i][1] * 20 + 'px';
         
-        snack.classList.add(snackBody[i][2]);
+        snack.classList.add(this.snackBody[i][2]);
         snack.classList.add('snack');
-        map.appendChild(snack);
+        this.map.appendChild(snack);
     }
     var snackHead = document.getElementsByClassName('head')[0];
-    switch (direction) {
+    switch (this.direct) {
         case 'right':
-            snackHead.style.transform = 'rotate(0deg)';
             break;
         case 'left':
             snackHead.style.transform = 'rotate(180deg)';
@@ -85,55 +103,58 @@ function snack() {
     }
 }
 function move() {
-    // 蛇身
-    for(var i = snackBody.length - 1; i > 0; i --) {
-        snackBody[i][0] = snackBody[i - 1][0];
-        snackBody[i][1] = snackBody[i - 1][1];
+    // 蛇身位置
+    for(var i = this.snackBody.length - 1; i > 0; i --) {
+        this.snackBody[i][0] = this.snackBody[i - 1][0];
+        this.snackBody[i][1] = this.snackBody[i - 1][1];
     }
-    // 蛇头
-    switch(direction) {
+    // 蛇头位置
+    switch(this.direct) {
         case 'right':
-            snackBody[0][0] = snackBody[0][0] + 1;
+            this.snackBody[0][0] += 1;
             break;
         case 'left':
-            snackBody[0][0] = snackBody[0][0] - 1;
+            this.snackBody[0][0] -= 1;
             break;
         case 'up':
-            snackBody[0][1] = snackBody[0][1] - 1;
+            this.snackBody[0][1] -= 1;
             break;
         case 'down':
-            snackBody[0][1] = snackBody[0][1] + 1;
+            this.snackBody[0][1] += 1;
             break;
         default:
             break;
     }
-    
-    // 判断是否吃到食物，加分
-    var len = snackBody.length;
-    var snackTailX = snackBody[len - 1][0],
-        snackTailY = snackBody[len - 1][1];
-    if(snackBody[0][0] == foodPositionX && snackBody[0][1] == foodPositionY) {
-        removeClass('food');
-        food();
-        // 因为不好判断新尾巴当前出现在哪个方向的点上，所以隐藏在最后一个尾部处，下一次移动会继承位置出现
-        var newTail = [snackTailX, snackTailY, 'body']; 
-        snackBody.push(newTail);
-        score ++;
-        oScore.innerText = score;
-    }
+    // 清除蛇，重新加载
     removeClass('snack');
     snack();
 
+    // 判断是否吃到食物，加分
+    var snackTailX = this.snackBody[this.snackBody.length - 1][0],
+        snackTailY = this.snackBody[this.snackBody.length - 1][1];
+    if(this.snackBody[0][0] == this.foodX && this.snackBody[0][1] == this.foodY) {
+        removeClass('food');
+        food();
+        // 因为不好判断新尾巴当前出现在哪个方向的点上，所以隐藏在最后一个尾部处，下一次移动会继承位置出现
+        this.snackBody.push([snackTailX, snackTailY, 'body']);
+        this.score ++;
+        scoreBox.innerText = score;
+    }
+
     // 判断是否撞壁，游戏结束
-    if(snackBody[0][0] < 0 || snackBody[0][0] >= (mapW / 20) || snackBody[0][1] < 0 || snackBody[0][1] >= (mapH / 20)) {
-        gameOver();
+    if(this.snackBody[0][0] < 0 || this.snackBody[0][0] >= (mapW / 20) || this.snackBody[0][1] < 0 || this.snackBody[0][1] >= (mapH / 20)) {
+        reloadGame();
         return;
     }
 
     // 判断是否吃到自己，游戏结束
-    for(var i = snackBody.length - 1; i > 0; i --) {
-        if(snackBody[0][0] == snackBody[i][0] && snackBody[0][1] == snackBody[i][1]) {
-            gameOver();
+    var snackHeadX = this.snackBody[0][0],
+        snackHeadY = this.snackBody[0][1];
+    for(var i = this.snackBody.length - 1; i > 0; i --) {
+        var snackBodyX = this.snackBody[i][0];
+        var snackBodyY = this.snackBody[i][1];
+        if(snackHeadX == snackBodyX && snackHeadY == snackBodyY) {
+            reloadGame();
             return;
         }
     }
@@ -141,108 +162,110 @@ function move() {
 
 function removeClass(className) {
     var doms = document.getElementsByClassName(className);
-    var len = doms.length;
-    for(var i = 0; i < len; i ++) {
+    while(doms.length) {
         doms[0].parentNode.removeChild(doms[0]);
     }
 }
 
-function gameOver() {
-    clearInterval(timer);
+function reloadGame() {
     removeClass('snack');
     removeClass('food');
-    oFinalScore.innerText = score;
+    clearInterval(snackMove);
+    
+    this.snackBody = [[2, 0, 'head'], [1, 0, 'body'], [0, 0, 'body']];
+    this.direct = 'right';
+    this.toRight = true;
+    this.toLeft = false;
+    this.toDown = true;
+    this.toUp = true;
+    startPauseBool = true;
+    startGameBool = true;
+    
     oLoser.style.display = 'block';
-
-    snackBody = [[2, 0, 'head'], [1, 0, 'body'], [0, 0, 'body']];
-    direction = 'right';
-    toRight = true;
-    toLeft = false;
-    toDown = true;
-    toUp = true;
-    overFlag = true;
-    startFlag = false;
-    score = 0;
-    oScore.innerText = score;
-    startPauseBtn.style.backgroundImage = 'url(./img/start.png)';
+    startPause.style.backgroundImage = 'url(./img/start.png)';
+    finalScore.innerText = this.score;
+    this.score = 0;
+    scoreBox.innerText = this.score;
 }
 function startGame() {
+    startPage.style.display = 'none';
+    leftPart.style.display = 'block';
     food();
     snack();
-    overFlag = false;
-    timer = setInterval(move, speed);
 }
-function startPause() {
-    if(startFlag) { // 开始转为暂停
-        clearInterval(timer);
-        startPauseBtn.style.backgroundImage = 'url(./img/start.png)';
-        startFlag = false;
-    }else { // 暂停转为开始
-        startPauseBtn.style.backgroundImage = 'url(./img/pause.png)';
-        startFlag = true;
-        if(!overFlag) {
-            timer = setInterval(move, speed);
-        }else {
-            startGame();
-        }
-    }
-}
-function changeDirection(e) {
-    switch (e.which) {
+function setDire(code) {
+    switch (code) {
         case 37:  //←
-            if(toLeft) {
-                direction = 'left';
-                toLeft = true;
-                toRight = false;
-                toUp = true;
-                toDown = true;
+            if(this.toLeft) {
+                this.direct = 'left';
+                this.toLeft = true;
+                this.toRight = false;
+                this.toUp = true;
+                this.toDown = true;
             }
             break;
         case 38:    //↑
-            if(toUp) {
-                direction = 'up';
-                toLeft = true;
-                toRight = true;
-                toUp = true;
-                toDown = false;
+            if(this.toUp) {
+                this.direct = 'up';
+                this.toLeft = true;
+                this.toRight = true;
+                this.toUp = true;
+                this.toDown = false;
             }
             break;
         case 39:    //→
-            if(toRight) {
-                direction = 'right';
-                toLeft = false;
-                toRight = true;
-                toUp = true;
-                toDown = true;
+            if(this.toRight) {
+                this.direct = 'right';
+                this.toLeft = false;
+                this.toRight = true;
+                this.toUp = true;
+                this.toDown = true;
             }
             break;
         case 40:    //↓
-            if(toDown) {
-                direction = 'down';
-                toLeft = true;
-                toRight = true;
-                toUp = false;
-                toDown = true;
+            if(this.toDown) {
+                this.direct = 'down';
+                this.toLeft = true;
+                this.toRight = true;
+                this.toUp = false;
+                this.toDown = true;
             }
             break;
         default:
             break;
     }
 }
+function startAndPauseGame() {
+    if(startPauseBool) { // 开始
+        if(startGameBool) {
+            startGameBool = false;
+            startGame();
+        }
+        snackMove = setInterval(move, speed);
+        startPause.style.backgroundImage = 'url(./img/pause.png)';
+        document.onkeydown = function(e) {
+            var code = e.which;
+            setDire(code);
+        }
+        startPauseBool = false;
+    }else { // 暂停
+        clearInterval(snackMove);
+        startPause.style.backgroundImage = 'url(./img/start.png)';
+        document.onkeydown = function(e) {
+            e.returnValue = false;
+            return false;
+        }
+        startPauseBool = true;
+    }
+}
 function bindEvent() {
     startBtn.onclick = function() {
-        startPage.style.display = 'none';
-        oLeftPart.style.display = 'block';
-        startGame();
+        startAndPauseGame();
     }
-    startPBtn.onclick = function() {
-        startPause();
+    startPause.onclick = function() {
+        startAndPauseGame();
     }
     oClose.onclick = function() {
         oLoser.style.display = 'none';
-    }
-    document.onkeydown = function(e) {
-        var event = e || window.event;
-        changeDirection(e);
     }
 }
