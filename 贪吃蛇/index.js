@@ -4,6 +4,7 @@
 // 4.判断吃到食物-->食物消失，蛇加一
 // 5.判断游戏结束，弹出框
 
+var main = document.getElementsByClassName('main')[0];
 var content = document.getElementsByClassName('content')[0];
 var oLoser = document.getElementsByClassName('loser')[0];
 var oClose = document.getElementsByClassName('close')[0];
@@ -22,9 +23,11 @@ var snackMove = null;
 init();
 function init() {
     // 地图信息
+    this.map = content;
     this.mapW = parseInt(map.offsetWidth);
     this.mapH = parseInt(map.offsetHeight);
-    this.map = content;
+    this.mapX = content.offsetLeft + main.offsetLeft;
+    this.mapY = content.offsetTop + main.offsetTop;
 
     // 蛇信息
     this.snackBody = [[2,0,'head'], [1,0,'body'], [0,0,'body']];
@@ -195,6 +198,7 @@ function startGame() {
     food();
     snack();
 }
+// 按键盘设置方向
 function setDire(code) {
     switch (code) {
         case 37:  //←
@@ -237,6 +241,40 @@ function setDire(code) {
             break;
     }
 }
+// 按鼠标点击设置方向
+function setDireByClick(clickX, clickY) {
+    var snackHeadX = snackBody[0][0],
+        snackHeadY = snackBody[0][1];
+    if(this.direct == 'left' || this.direct == 'right') {
+        if(clickY > snackHeadY) {
+            this.direct = 'down';
+            this.toLeft = true;
+            this.toRight = true;
+            this.toUp = true;
+            this.toDown = false;
+        }else {
+            this.direct = 'up';
+            this.toLeft = true;
+            this.toRight = true;
+            this.toUp = false;
+            this.toDown = true;
+        }
+    }else if(this.direct == 'up' || this.direct == 'down'){
+        if(clickX > snackHeadX) {
+            this.direct = 'right';
+            this.toLeft = false;
+            this.toRight = true;
+            this.toUp = true;
+            this.toDown = true;
+        }else {
+            this.direct = 'left';
+            this.toLeft = true;
+            this.toRight = false;
+            this.toUp = true;
+            this.toDown = true;
+        }
+    }    
+}
 function startAndPauseGame() {
     if(startPauseBool) { // 开始
         if(startGameBool) {
@@ -245,9 +283,17 @@ function startAndPauseGame() {
         }
         snackMove = setInterval(move, speed);
         startPause.style.backgroundImage = 'url(./img/pause.png)';
+        //  键盘，控制方向
         document.onkeydown = function(e) {
             var code = e.which;
             setDire(code);
+        }
+        // 鼠标点击，控制方向
+        main.onclick = function(e) {
+            var _this = window;
+            var clickX = (e.clientX - _this.mapX) / _this.snackWidth,
+                clickY = (e.clientY - _this.mapY) / _this.snackHeight;
+            setDireByClick(clickX, clickY);
         }
         startPauseBool = false;
     }else { // 暂停
@@ -257,11 +303,16 @@ function startAndPauseGame() {
             e.returnValue = false;
             return false;
         }
+        document.onclick = function(e) {
+            e.returnValue = false;
+            return false;
+        }
         startPauseBool = true;
     }
 }
 function bindEvent() {
     startBtn.onclick = function() {
+        window.begin = true;
         startAndPauseGame();
     }
     startPause.onclick = function() {
