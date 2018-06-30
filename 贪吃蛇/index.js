@@ -49,6 +49,7 @@ function init() {
     scoreBox.innerText = this.score;
     bindEvent();
 }
+// 渲染食物
 function food() {
     var mapLenW = this.mapW / this.foodWidth,
         mapLenH = this.mapH / this.foodHeight;
@@ -75,6 +76,7 @@ function food() {
     
     this.map.appendChild(food);
 }
+// 渲染蛇
 function snack() {
     for(var i = 0; i < snackBody.length; i++) {
         var snack = document.createElement('div');
