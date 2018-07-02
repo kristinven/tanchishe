@@ -46,6 +46,7 @@ function init() {
     this.toLeft = false;
     this.toDown = true;
     this.toUp = true;
+    this.sameDire = true;   //为了键盘反复按同一个方向，不改变运动速度过快运动
     
     //分数
     this.score = 0;
@@ -149,7 +150,6 @@ function move() {
     // 判断是否撞壁，游戏结束
     if(this.snackBody[0][0] < 0 || this.snackBody[0][0] >= (mapW / 20) || this.snackBody[0][1] < 0 || this.snackBody[0][1] >= (mapH / 20)) {
         reloadGame();
-        return;
     }
 
     // 判断是否吃到自己，游戏结束
@@ -160,7 +160,6 @@ function move() {
         var snackBodyY = this.snackBody[i][1];
         if(snackHeadX == snackBodyX && snackHeadY == snackBodyY) {
             reloadGame();
-            return;
         }
     }
 }
@@ -176,6 +175,7 @@ function reloadGame() {
     removeClass('snack');
     removeClass('food');
     clearInterval(snackMove);
+    startAndPauseGame();
     
     this.snackBody = [[2, 0, 'head'], [1, 0, 'body'], [0, 0, 'body']];
     this.direct = 'right';
@@ -183,11 +183,10 @@ function reloadGame() {
     this.toLeft = false;
     this.toDown = true;
     this.toUp = true;
-    startPauseBool = true;
     startGameBool = true;
-    
+    startPauseBool = true;
+
     oLoser.style.display = 'block';
-    startPause.style.backgroundImage = 'url(./img/start.png)';
     finalScore.innerText = this.score;
     this.score = 0;
     scoreBox.innerText = this.score;
@@ -203,6 +202,11 @@ function setDire(code) {
     switch (code) {
         case 37:  //←
             if(this.toLeft) {
+                if(this.direct == 'left') {
+                    this.sameDire = true;
+                }else {
+                    this.sameDire = false;
+                }
                 this.direct = 'left';
                 this.toLeft = true;
                 this.toRight = false;
@@ -212,6 +216,11 @@ function setDire(code) {
             break;
         case 38:    //↑
             if(this.toUp) {
+                if (this.direct == 'up') {
+                    this.sameDire = true;
+                } else {
+                    this.sameDire = false;
+                }
                 this.direct = 'up';
                 this.toLeft = true;
                 this.toRight = true;
@@ -221,6 +230,11 @@ function setDire(code) {
             break;
         case 39:    //→
             if(this.toRight) {
+                if (this.direct == 'right') {
+                    this.sameDire = true;
+                } else {
+                    this.sameDire = false;
+                }
                 this.direct = 'right';
                 this.toLeft = false;
                 this.toRight = true;
@@ -230,6 +244,11 @@ function setDire(code) {
             break;
         case 40:    //↓
             if(this.toDown) {
+                if (this.direct == 'down') {
+                    this.sameDire = true;
+                } else {
+                    this.sameDire = false;
+                }
                 this.direct = 'down';
                 this.toLeft = true;
                 this.toRight = true;
@@ -285,15 +304,20 @@ function startAndPauseGame() {
         startPause.style.backgroundImage = 'url(./img/pause.png)';
         //  键盘，控制方向
         document.onkeydown = function(e) {
+            var _this = window;
             var code = e.which;
             setDire(code);
+            if(!_this.sameDire) {
+                move();
+            }
         }
         // 鼠标点击，控制方向
-        main.onclick = function(e) {
+        main.onmousedown = function(e) {
             var _this = window;
             var clickX = (e.clientX - _this.mapX) / _this.snackWidth,
-                clickY = (e.clientY - _this.mapY) / _this.snackHeight;
+            clickY = (e.clientY - _this.mapY) / _this.snackHeight;
             setDireByClick(clickX, clickY);
+            move();
         }
         startPauseBool = false;
     }else { // 暂停
@@ -303,7 +327,7 @@ function startAndPauseGame() {
             e.returnValue = false;
             return false;
         }
-        document.onclick = function(e) {
+        main.onmousedown = function (e) {
             e.returnValue = false;
             return false;
         }
