@@ -21,6 +21,7 @@ var speed = 200;
 var snackMove = null;
 
 init();
+// 初始化
 function init() {
     // 地图信息
     this.map = content;
@@ -108,6 +109,7 @@ function snack() {
             break;
     }
 }
+// 移动
 function move() {
     // 蛇身位置
     for(var i = this.snackBody.length - 1; i > 0; i --) {
@@ -163,14 +165,14 @@ function move() {
         }
     }
 }
-
+// 删除指定类名的元素
 function removeClass(className) {
     var doms = document.getElementsByClassName(className);
     while(doms.length) {
         doms[0].parentNode.removeChild(doms[0]);
     }
 }
-
+// 重新加载游戏设置信息
 function reloadGame() {
     removeClass('snack');
     removeClass('food');
@@ -191,6 +193,7 @@ function reloadGame() {
     this.score = 0;
     scoreBox.innerText = this.score;
 }
+// 开始游戏
 function startGame() {
     startPage.style.display = 'none';
     leftPart.style.display = 'block';
@@ -294,6 +297,7 @@ function setDireByClick(clickX, clickY) {
         }
     }    
 }
+// 开始/暂停游戏
 function startAndPauseGame() {
     if(startPauseBool) { // 开始
         if(startGameBool) {
@@ -334,6 +338,7 @@ function startAndPauseGame() {
         startPauseBool = true;
     }
 }
+// 统一绑定事件
 function bindEvent() {
     startBtn.onclick = function() {
         window.begin = true;
